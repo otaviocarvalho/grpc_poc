@@ -21,10 +21,12 @@ type server struct {
 
 func (s *server) CreateCustomer(ctx context.Context, in *pb.CustomerRequest) (*pb.CustomerResponse, error) {
 	s.savedCustomers = append(s.savedCustomers, in)
+	log.Printf("New request to create customer with id: %v", in.Id)
 	return &pb.CustomerResponse{Id: in.Id, Success: true}, nil
 }
 
 func (s *server) GetCustomers(filter *pb.CustomerFilter, stream pb.Customer_GetCustomersServer) error {
+	log.Print("New request to get customers")
 	for _, customer := range s.savedCustomers {
 		if filter.Keyword != "" {
 			if !strings.Contains(customer.Name, filter.Keyword) {
@@ -45,5 +47,6 @@ func main() {
 	}
 	s := grpc.NewServer()
 	pb.RegisterCustomerServer(s, &server{})
+	log.Printf("listening on port: %v", port)
 	s.Serve(lis)
 }
