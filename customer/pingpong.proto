@@ -1,0 +1,27 @@
+syntax = "proto3";
+package pingpong;
+
+service PingPong {
+  rpc Ping(Request) returns (stream Response) {}
+  rpc Pong(Request) returns (Response) {}
+}
+
+message Request {
+    int32 id = 1;
+
+    message Record {
+        string payload = 1;
+    }
+
+    Record record = 2;
+}
+
+message Response {
+    int32 id = 1;
+
+    message Record {
+        string payload = 1;
+    }
+
+    Record record = 2;
+}
