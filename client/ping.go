@@ -21,6 +21,7 @@ func sendPing(client pb.PingPongClient, ping *pb.Ping) {
 	if err != nil {
 		log.Fatalf("Could not send message: %s", err)
 	}
+
 }
 
 func main() {
@@ -56,6 +57,9 @@ func main() {
         sendPing(client, ping)
 
         clockAfter := time.Now().Sub(clockBefore)
-        fmt.Printf("Iteration #%v\t%v\n", i, clockAfter)
+        timeBucket["sum"] += int64(clockAfter)
     }
+
+    fmt.Printf("Total time\t%v\n", time.Duration(timeBucket["sum"]))
+    fmt.Printf("Average latency\t%v\n", time.Duration(timeBucket["sum"] / int64(numRuns)))
 }

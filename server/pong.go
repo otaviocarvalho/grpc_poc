@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"net"
-    "crypto/rand"
+    "fmt"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -18,22 +18,8 @@ const (
 type pingPongServer struct {}
 
 func (s *pingPongServer) SendPing(ctx context.Context, in *pb.Ping) (*pb.Pong, error) {
-	log.Printf("Received Ping with message: %s", in.Payload)
-	log.Printf("Sending Pong back  with message: %s", "pong")
-
-    msgSize := 100
-    randomBytes := make([]byte, msgSize)
-    _, err := rand.Read(randomBytes)
-    if err != nil {
-        log.Fatal(err)
-    }
-    msg := string(randomBytes)
-
-    pong := &pb.Pong{
-        Payload: msg,
-    }
-
-	return pong, nil
+    fmt.Println("Received ping with message: %s", in.Payload)
+    return &pb.Pong{ Payload: in.Payload }, nil
 }
 
 func main() {
