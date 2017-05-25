@@ -3,6 +3,7 @@ package main
 import (
 	"log"
     "time"
+    "math"
     "fmt"
     "crypto/rand"
 
@@ -47,19 +48,24 @@ func main() {
         Payload: msg,
     }
 
-    timeBucket := make(map[string]int64)
+    timeBucket := make(map[string]float64)
 
     numRuns := 100
     for i := 0; i < numRuns; i++ {
-        clockBefore := time.Now()
+        startTime := time.Now()
 
         // Sends ping
         sendPing(client, ping)
 
-        clockAfter := time.Now().Sub(clockBefore)
-        timeBucket["sum"] += int64(clockAfter)
+        totalTime := time.Now().Sub(startTime)
+        fmt.Printf("Cur Latency\t%v\n", time.Duration(totalTime))
+        timeBucket["sum"] += float64(totalTime)
+        timeBucket["minLatency"] = math.Min(float64(totalTime), float64(timeBucket["minLatency"]))
+        timeBucket["maxLatency"] = math.Max(float64(totalTime), float64(timeBucket["maxLatency"]))
     }
 
     fmt.Printf("Total time\t%v\n", time.Duration(timeBucket["sum"]))
-    fmt.Printf("Average latency\t%v\n", time.Duration(timeBucket["sum"] / int64(numRuns)))
+    fmt.Printf("Min Latency\t%v\n", time.Duration(timeBucket["minLatency"]))
+    fmt.Printf("Max Latency\t%v\n", time.Duration(timeBucket["maxLatency"]))
+    fmt.Printf("Average latency\t%v\n", time.Duration(timeBucket["sum"] / float64(numRuns)))
 }
