@@ -39,7 +39,7 @@ func main() {
 	// Creates a new Ping
 	client := pb.NewPingPongClient(conn)
 
-    msgSize := 64 * 1000
+    msgSize := 32 * 1000 // 64KB
     randomBytes := make([]byte, msgSize)
     _, err = rand.Read(randomBytes)
     if err != nil {
@@ -54,7 +54,7 @@ func main() {
     // 1ms to 30 seconds range, 5 sigfigs precision
     hist := hdr.New(1000000, 30000000000, 5)
 
-    numRuns := 10
+    numRuns := 10000
     startTime := time.Now()
     for i := 0; i < numRuns; i++ {
         startTimeLoop := time.Now()
@@ -67,7 +67,7 @@ func main() {
     }
 
     totalTime := time.Now().Sub(startTime)
-    log.Printf("QPS: ", float64(numRuns) / totalTime.Seconds())
+    log.Printf("QPS: %v", float64(numRuns) / totalTime.Seconds())
 
     log.Printf("50th: %d\n", hist.ValueAtQuantile(50))
     log.Printf("90th: %d\n", hist.ValueAtQuantile(90))
