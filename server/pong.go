@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"net"
-    "fmt"
+    //"fmt"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -18,7 +18,7 @@ const (
 type pingPongServer struct {}
 
 func (s *pingPongServer) SendPing(ctx context.Context, in *pb.Ping) (*pb.Pong, error) {
-    fmt.Println("Received ping with message: %s", in.Payload)
+    //fmt.Println("Received ping with message: %s", in.Payload)
     return &pb.Pong{ Payload: in.Payload }, nil
 }
 
