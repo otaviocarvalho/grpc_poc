@@ -1,0 +1,10 @@
+syntax = "proto3";
+package data;
+
+service Data {
+  rpc SendMeasurement(Measurement) returns (Measurement) {}
+}
+
+message Measurement {
+    float value = 1;
+}
