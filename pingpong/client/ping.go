@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
     //"github.com/codahale/hdrhistogram"
 
-	pb "grpc_poc/protobuf"
+	pb "grpc_poc/pingpong"
 	hdr "github.com/otaviocarvalho/hdrhistogram"
 )
 

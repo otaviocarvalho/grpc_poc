@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	pb "grpc_poc/customer"
+	pb "grpc_poc/sample"
 )
 
 const (

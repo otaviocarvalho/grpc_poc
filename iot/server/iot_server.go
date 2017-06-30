@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	pb "grpc_poc/protobuf_iot"
+	pb "grpc_poc/iot"
 )
 
 const (
@@ -22,7 +22,7 @@ type dataServer struct {}
 var counter int64 = 0
 
 func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*pb.Measurement, error) {
-    fmt.Println("Received ping: %s", counter)
+    //fmt.Println("Received ping: %s", counter)
 
     // Increase counter
     atomic.AddInt64(&counter, 1)

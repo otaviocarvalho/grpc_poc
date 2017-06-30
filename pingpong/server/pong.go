@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	pb "grpc_poc/protobuf"
+	pb "grpc_poc/pingpong"
 )
 
 const (

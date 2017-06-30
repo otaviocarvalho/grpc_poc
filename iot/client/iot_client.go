@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
     //"github.com/codahale/hdrhistogram"
 
-	pb "grpc_poc/protobuf_iot"
+	pb "grpc_poc/iot"
 	hdr "github.com/otaviocarvalho/hdrhistogram"
 )
 
@@ -65,7 +65,7 @@ func main() {
     // 1ms to 30 seconds range, 5 sigfigs precision
     hist := hdr.New(1000000, 30000000000, 5)
 
-    numRuns := 10000
+    numRuns := 100
     startTime := time.Now()
     for i := 0; i < numRuns; i++ {
         startTimeLoop := time.Now()
