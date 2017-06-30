@@ -21,11 +21,30 @@ const (
 )
 
 func sendMeasurement(client pb.DataClient, data *pb.Measurement) {
-	_, err := client.SendMeasurement(context.Background(), data)
+
+    _, err := client.SendMeasurement(context.Background(), data)
 	if err != nil {
 		log.Fatalf("Could not send message: %s", err)
 	}
 
+    //fmt.Println("Measurement response id: %v", measurementResponse.GetId())
+}
+
+func plotQuantiles(numRuns int, totalTime time.Duration, hist *hdr.Histogram) {
+    log.Printf("QPS: %v", float64(numRuns) / totalTime.Seconds())
+
+    log.Printf("50th: %d\n", hist.ValueAtQuantile(50))
+    log.Printf("90th: %d\n", hist.ValueAtQuantile(90))
+    log.Printf("99th: %d\n", hist.ValueAtQuantile(99))
+    log.Printf("99.9th: %d\n", hist.ValueAtQuantile(99.9))
+    log.Printf("99.99th: %d\n", hist.ValueAtQuantile(99.99))
+    log.Printf("99.999th: %d\n", hist.ValueAtQuantile(99.999))
+    log.Printf("99.9999th: %d\n", hist.ValueAtQuantile(99.9999))
+    log.Printf("99.99999th: %d\n", hist.ValueAtQuantile(99.99999))
+    log.Printf("99.999999th: %d\n", hist.ValueAtQuantile(99.999999))
+    log.Printf("99.9999999th: %d\n", hist.ValueAtQuantile(99.9999999))
+    log.Printf("99.99999999th: %d\n", hist.ValueAtQuantile(99.99999999))
+    log.Printf("99.999999999th: %d\n", hist.ValueAtQuantile(99.999999999))
 }
 
 func main() {
@@ -46,7 +65,7 @@ func main() {
     // 1ms to 30 seconds range, 5 sigfigs precision
     hist := hdr.New(1000000, 30000000000, 5)
 
-    numRuns := 10
+    numRuns := 10000
     startTime := time.Now()
     for i := 0; i < numRuns; i++ {
         startTimeLoop := time.Now()
@@ -59,18 +78,6 @@ func main() {
     }
 
     totalTime := time.Now().Sub(startTime)
-    log.Printf("QPS: %v", float64(numRuns) / totalTime.Seconds())
 
-    log.Printf("50th: %d\n", hist.ValueAtQuantile(50))
-    log.Printf("90th: %d\n", hist.ValueAtQuantile(90))
-    log.Printf("99th: %d\n", hist.ValueAtQuantile(99))
-    log.Printf("99.9th: %d\n", hist.ValueAtQuantile(99.9))
-    log.Printf("99.99th: %d\n", hist.ValueAtQuantile(99.99))
-    log.Printf("99.999th: %d\n", hist.ValueAtQuantile(99.999))
-    log.Printf("99.9999th: %d\n", hist.ValueAtQuantile(99.9999))
-    log.Printf("99.99999th: %d\n", hist.ValueAtQuantile(99.99999))
-    log.Printf("99.999999th: %d\n", hist.ValueAtQuantile(99.999999))
-    log.Printf("99.9999999th: %d\n", hist.ValueAtQuantile(99.9999999))
-    log.Printf("99.99999999th: %d\n", hist.ValueAtQuantile(99.99999999))
-    log.Printf("99.999999999th: %d\n", hist.ValueAtQuantile(99.999999999))
+    plotQuantiles(numRuns, totalTime, hist)
 }
