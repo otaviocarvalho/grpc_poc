@@ -1,33 +1,30 @@
 package main
 
 import (
-	"log"
+    "log"
     "time"
-    //"math"
-    //"fmt"
+    "flag"
     "math/rand"
+    "sync"
 
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-    //"github.com/codahale/hdrhistogram"
+    "golang.org/x/net/context"
+    "google.golang.org/grpc"
 
-	pb "grpc_poc/iot"
-	hdr "github.com/otaviocarvalho/hdrhistogram"
+    pb "grpc_poc/iot"
+    hdr "github.com/otaviocarvalho/hdrhistogram"
 )
 
-const (
-    //address = "191.232.175.110:50051"
-    address = "localhost:50051"
-)
+var concurrency = flag.Int("c", 1, "concurrency")
+var total = flag.Int("n", 1, "total requests for all clients")
+var host = flag.String("s", "localhost:50051", "ip/port")
 
 func sendMeasurement(client pb.DataClient, data *pb.Measurement) {
 
     _, err := client.SendMeasurement(context.Background(), data)
-	if err != nil {
-		log.Fatalf("Could not send message: %s", err)
-	}
+    if err != nil {
+        log.Fatalf("Could not send message: %s", err)
+    }
 
-    //fmt.Println("Measurement response id: %v", measurementResponse.GetId())
 }
 
 func plotQuantiles(numRuns int, totalTime time.Duration, hist *hdr.Histogram) {
@@ -48,36 +45,51 @@ func plotQuantiles(numRuns int, totalTime time.Duration, hist *hdr.Histogram) {
 }
 
 func main() {
-	// Set up a connection to the gRPC server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-
-	// Creates a new data client
-	client := pb.NewDataClient(conn)
-
-    data := &pb.Measurement{
-        Value: rand.ExpFloat64(),
-    }
+    flag.Parse()
+    n := *concurrency
+    m := *total / n
 
     // 1ms to 30 seconds range, 5 sigfigs precision
     hist := hdr.New(1000000, 30000000000, 5)
 
-    numRuns := 100
+    var wg sync.WaitGroup
+    wg.Add(n * m)
+
     startTime := time.Now()
-    for i := 0; i < numRuns; i++ {
-        startTimeLoop := time.Now()
+    for i := 0; i < n; i++ {
+        go func() {
+            // Set up a connection to the gRPC server.
+            conn, err := grpc.Dial(*host, grpc.WithInsecure())
+            if err != nil {
+                log.Fatalf("did not connect: %v", err)
+            }
 
-        // Sends measurement
-        sendMeasurement(client, data)
+            // Creates a new data client
+            client := pb.NewDataClient(conn)
 
-        totalTimeLoop := time.Now().Sub(startTimeLoop)
-        hist.RecordValue(totalTimeLoop.Nanoseconds())
+            data := &pb.Measurement{
+                Value: rand.ExpFloat64(),
+            }
+
+            for j := 0; j < m; j++ {
+                startTimeLoop := time.Now()
+
+                // Sends measurement
+                sendMeasurement(client, data)
+
+                totalTimeLoop := time.Now().Sub(startTimeLoop)
+                hist.RecordValue(totalTimeLoop.Nanoseconds())
+
+                wg.Done()
+            }
+
+            conn.Close()
+        }()
     }
+
+    wg.Wait()
 
     totalTime := time.Now().Sub(startTime)
 
-    plotQuantiles(numRuns, totalTime, hist)
+    plotQuantiles(n*m, totalTime, hist)
 }
