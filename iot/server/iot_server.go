@@ -1,21 +1,18 @@
 package main
 
 import (
-	"log"
-	"net"
+    "log"
+    "net"
     "math"
+    "flag"
     "sync/atomic"
 
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
+    "golang.org/x/net/context"
+    "google.golang.org/grpc"
 
     "github.com/VividCortex/ewma"
 
-	pb "grpc_poc/iot"
-)
-
-const (
-	port = ":50051"
+    pb "grpc_poc/iot"
 )
 
 type dataServer struct {}
@@ -23,6 +20,8 @@ type dataServer struct {}
 var counter int64 = 0
 
 var expMovingAvg = ewma.NewMovingAverage()
+
+var port = flag.String("p", ":50051", "ip/port")
 
 func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*pb.Measurement, error) {
     // Calculate EWMA
@@ -35,13 +34,15 @@ func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*
 }
 
 func main() {
-	lis, err := net.Listen("tcp", port)
+    flag.Parse()
+
+	lis, err := net.Listen("tcp", *port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
 	s := grpc.NewServer(grpc.MaxConcurrentStreams(math.MaxUint32))
 	pb.RegisterDataServer(s, &dataServer{})
-	log.Printf("listening on port: %v", port)
+	log.Printf("listening on port: %v", *port)
 	s.Serve(lis)
 }
