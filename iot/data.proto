@@ -7,5 +7,5 @@ service Data {
 
 message Measurement {
   int64 id = 1;
-  double value = 2;
+  string value = 2;
 }

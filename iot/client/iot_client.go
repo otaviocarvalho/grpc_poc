@@ -67,8 +67,16 @@ func main() {
             // Creates a new data client
             client := pb.NewDataClient(conn)
 
+            msgSize := 32 * 1000 // 64KB
+            randomBytes := make([]byte, msgSize)
+            _, err = rand.Read(randomBytes)
+            if err != nil {
+                log.Fatal(err)
+            }
+            msg := string(randomBytes)
+
             data := &pb.Measurement{
-                Value: rand.ExpFloat64(),
+                Value: msg,
             }
 
             for j := 0; j < m; j++ {
