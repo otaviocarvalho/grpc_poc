@@ -49,6 +49,7 @@ func main() {
     n := *concurrency
     m := *total / n
 
+    log.Println("%v %v", n, m)
     // 1ms to 30 seconds range, 5 sigfigs precision
     hist := hdr.New(1000000, 30000000000, 5)
 
@@ -67,7 +68,7 @@ func main() {
             // Creates a new data client
             client := pb.NewDataClient(conn)
 
-            msgSize := 32 * 1000 // 64KB
+            msgSize := 64 * 1000 // 64KB
             randomBytes := make([]byte, msgSize)
             _, err = rand.Read(randomBytes)
             if err != nil {
