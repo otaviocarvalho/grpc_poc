@@ -9,6 +9,7 @@ import (
 
     "golang.org/x/net/context"
     "google.golang.org/grpc"
+    //"github.com/golang/protobuf/proto"
 
     pb "grpc_poc/iot"
     hdr "github.com/otaviocarvalho/hdrhistogram"
@@ -70,6 +71,7 @@ func main() {
             data := &pb.Measurement{
                 Value: rand.ExpFloat64(),
             }
+            //log.Printf("%v", proto.Size(data))
 
             for j := 0; j < m; j++ {
                 startTimeLoop := time.Now()
