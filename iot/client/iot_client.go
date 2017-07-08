@@ -53,25 +53,26 @@ func main() {
     // 1ms to 30 seconds range, 5 sigfigs precision
     hist := hdr.New(1000000, 30000000000, 5)
 
+    // Set up a connection to the gRPC server.
+    conn, err := grpc.Dial(*host, grpc.WithInsecure())
+    if err != nil {
+        log.Fatalf("did not connect: %v", err)
+    }
+
+    // Creates a new data client
+    client := pb.NewDataClient(conn)
+
+    data := &pb.Measurement{
+        Value: rand.ExpFloat64(),
+    }
+    //log.Printf("%v", proto.Size(data))
+
     var wg sync.WaitGroup
     wg.Add(n * m)
 
     startTime := time.Now()
     for i := 0; i < n; i++ {
         go func() {
-            // Set up a connection to the gRPC server.
-            conn, err := grpc.Dial(*host, grpc.WithInsecure())
-            if err != nil {
-                log.Fatalf("did not connect: %v", err)
-            }
-
-            // Creates a new data client
-            client := pb.NewDataClient(conn)
-
-            data := &pb.Measurement{
-                Value: rand.ExpFloat64(),
-            }
-            //log.Printf("%v", proto.Size(data))
 
             for j := 0; j < m; j++ {
                 startTimeLoop := time.Now()
@@ -85,7 +86,6 @@ func main() {
                 wg.Done()
             }
 
-            conn.Close()
         }()
     }
 
@@ -94,4 +94,6 @@ func main() {
     totalTime := time.Now().Sub(startTime)
 
     plotQuantiles(n*m, totalTime, hist)
+
+    conn.Close()
 }
