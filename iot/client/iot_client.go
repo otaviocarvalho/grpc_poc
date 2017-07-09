@@ -10,14 +10,18 @@ import (
     "golang.org/x/net/context"
     "google.golang.org/grpc"
     //"github.com/golang/protobuf/proto"
+    "github.com/VividCortex/ewma"
 
     pb "grpc_poc/iot"
     hdr "github.com/otaviocarvalho/hdrhistogram"
 )
 
 var concurrency = flag.Int("c", 1, "concurrency")
+var batchSize = flag.Int("b", 1, "batch size")
 var total = flag.Int("n", 1, "total requests for all clients")
 var host = flag.String("s", "localhost:50051", "ip/port")
+
+var expMovingAvg = ewma.NewMovingAverage()
 
 func sendMeasurement(client pb.DataClient, data *pb.Measurement) {
 
@@ -26,6 +30,13 @@ func sendMeasurement(client pb.DataClient, data *pb.Measurement) {
         log.Fatalf("Could not send message: %s", err)
     }
 
+}
+
+func processMeasurement(client pb.DataClient, data *pb.Measurement) float64 {
+    // Calculate EWMA
+    expMovingAvg.Add(data.GetValue())
+
+    return expMovingAvg.Value()
 }
 
 func plotQuantiles(numRuns int, totalTime time.Duration, hist *hdr.Histogram) {
@@ -65,7 +76,6 @@ func main() {
     data := &pb.Measurement{
         Value: rand.ExpFloat64(),
     }
-    //log.Printf("%v", proto.Size(data))
 
     var wg sync.WaitGroup
     wg.Add(n * m)
@@ -77,8 +87,12 @@ func main() {
             for j := 0; j < m; j++ {
                 startTimeLoop := time.Now()
 
-                // Sends measurement
-                sendMeasurement(client, data)
+                // Controls processing local and remote
+                if ((j+1) % *batchSize != 0) {
+                    processMeasurement(client, data)
+                } else {
+                    sendMeasurement(client, data)
+                }
 
                 totalTimeLoop := time.Now().Sub(startTimeLoop)
                 hist.RecordValue(totalTimeLoop.Nanoseconds())
