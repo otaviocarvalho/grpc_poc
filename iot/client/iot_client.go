@@ -23,6 +23,8 @@ var host = flag.String("s", "localhost:50051", "ip/port")
 
 var expMovingAvg = ewma.NewMovingAverage()
 
+var expMAvgMutex sync.RWMutex
+
 func sendMeasurement(client pb.DataClient, data *pb.Measurement) {
 
     _, err := client.SendMeasurement(context.Background(), data)
@@ -34,9 +36,15 @@ func sendMeasurement(client pb.DataClient, data *pb.Measurement) {
 
 func processMeasurement(client pb.DataClient, data *pb.Measurement) float64 {
     // Calculate EWMA
+    expMAvgMutex.Lock()
     expMovingAvg.Add(data.GetValue())
+    expMAvgMutex.Unlock()
 
-    return expMovingAvg.Value()
+    expMAvgMutex.RLock()
+    measurementValue := expMovingAvg.Value()
+    expMAvgMutex.RUnlock()
+
+    return measurementValue
 }
 
 func plotQuantiles(numRuns int, totalTime time.Duration, hist *hdr.Histogram) {
@@ -80,6 +88,8 @@ func main() {
     var wg sync.WaitGroup
     wg.Add(n * m)
 
+    var histMutex sync.RWMutex
+
     startTime := time.Now()
     for i := 0; i < n; i++ {
         go func() {
@@ -95,7 +105,10 @@ func main() {
                 }
 
                 totalTimeLoop := time.Now().Sub(startTimeLoop)
+
+                histMutex.Lock()
                 hist.RecordValue(totalTimeLoop.Nanoseconds())
+                histMutex.Unlock()
 
                 wg.Done()
             }
