@@ -3,7 +3,7 @@ package main
 import (
     "log"
     "net"
-    "math"
+//    "math"
     "flag"
     "sync/atomic"
     "sync"
@@ -43,6 +43,10 @@ func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*
     measurement := &pb.Measurement{Id: counter, Value: expMovingAvg.Value()}
     expMAvgMutex.RUnlock()
 
+    counterMutex.Lock()
+    log.Printf("Counter %v", counter)
+    counterMutex.Unlock()
+
     return measurement, nil
 }
 
@@ -54,7 +58,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer(grpc.MaxConcurrentStreams(math.MaxUint32))
+	s := grpc.NewServer(grpc.MaxConcurrentStreams(1))
 	pb.RegisterDataServer(s, &dataServer{})
 	log.Printf("listening on port: %v", *port)
 	s.Serve(lis)
