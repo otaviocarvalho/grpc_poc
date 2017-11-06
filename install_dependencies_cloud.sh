@@ -1,13 +1,9 @@
 # Move to base dir 
 cd /home/ocarval/
 
-# Install docker
-sudo apt-get update
-sudo apt-get install docker
-
 # Install golang
-sudo apt-get install golang-go -y
 mkdir /home/ocarval/go
+sudo apt-get install golang-go -y
 echo "export GOPATH=/home/ocarval/go" >> /home/ocarval/.bash_aliases
 echo "export PATH=$PATH:$GOROOT/bin:$GOPATH/bin" >> /home/ocarval/.bash_aliases
 source /home/ocarval/.bash_aliases
