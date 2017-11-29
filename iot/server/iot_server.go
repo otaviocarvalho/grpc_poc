@@ -7,9 +7,11 @@ import (
     "flag"
     "sync/atomic"
     "sync"
+    "time"
 
     "golang.org/x/net/context"
     "google.golang.org/grpc"
+    "go4.org/net/throttle"
 
     "github.com/VividCortex/ewma"
 
@@ -27,6 +29,8 @@ var expMAvgMutex sync.RWMutex
 var counterMutex sync.Mutex
 
 var port = flag.String("p", ":50051", "ip/port")
+
+var latency = flag.Duration("l", 10*time.Millisecond, "artificial latency")
 
 func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*pb.Measurement, error) {
     // Calculate EWMA
@@ -49,13 +53,16 @@ func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*
 func main() {
     flag.Parse()
 
-	lis, err := net.Listen("tcp", *port)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
+    lis, err := net.Listen("tcp", *port)
+    if err != nil {
+        log.Fatalf("failed to listen: %v", err)
+    }
 
-	s := grpc.NewServer(grpc.MaxConcurrentStreams(math.MaxUint32))
-	pb.RegisterDataServer(s, &dataServer{})
-	log.Printf("listening on port: %v", *port)
-	s.Serve(lis)
+    rate := throttle.Rate{Latency: *latency}
+    lis = &throttle.Listener{lis, rate, rate}
+
+    s := grpc.NewServer(grpc.MaxConcurrentStreams(math.MaxUint32))
+    pb.RegisterDataServer(s, &dataServer{})
+    log.Printf("listening on port: %v", *port)
+    s.Serve(lis)
 }
