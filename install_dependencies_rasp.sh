@@ -23,3 +23,4 @@ export GOPATH=$HOME/go && export GOBIN=$GOPATH/bin && export PATH=$PATH:$GOBIN
 /usr/local/go/bin/go get -u github.com/golang/protobuf/protoc-gen-go
 /usr/local/go/bin/go get github.com/otaviocarvalho/hdrhistogram
 /usr/local/go/bin/go get github.com/VividCortex/ewma
+/usr/local/go/bin/go get go4.org/net/throttle
