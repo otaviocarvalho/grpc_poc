@@ -1,6 +1,9 @@
 # Move to base dir 
 cd /home/ocarval/
 
+# Install pssh
+sudo apt-get install pssh
+
 # Install golang
 mkdir /home/ocarval/go
 time (while ps -opid= -C apt-get > /dev/null; do sleep 1; done); # wait for debian update to release dpkg lock
