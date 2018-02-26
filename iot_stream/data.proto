@@ -1,0 +1,11 @@
+syntax = "proto3";
+package data;
+
+service MeterCommunicator {
+  rpc SimpleRPC(stream Measurement) returns (stream Measurement) {}
+}
+
+message Measurement {
+  int64 id = 1;
+  int64 value = 2;
+}
