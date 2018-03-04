@@ -15,8 +15,9 @@ import (
 	//"github.com/golang/protobuf/proto"
 	"github.com/VividCortex/ewma"
 
-	hdr "github.com/otaviocarvalho/hdrhistogram"
 	pb "grpc_poc/iot"
+
+	hdr "github.com/otaviocarvalho/hdrhistogram"
 )
 
 var concurrency = flag.Int("c", 1, "concurrency")
@@ -148,7 +149,7 @@ func main() {
 			}
 
 		}()
-}
+	}
 
 	wg.Wait()
 
