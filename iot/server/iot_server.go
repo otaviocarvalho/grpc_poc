@@ -28,7 +28,7 @@ var expMAvgMutex sync.RWMutex
 
 var counterMutex sync.Mutex
 
-var port = flag.String("p", ":50051", "ip/port")
+var port = flag.String("p", ":50052", "ip/port")
 
 var latency = flag.Duration("l", 10*time.Millisecond, "artificial latency")
 
