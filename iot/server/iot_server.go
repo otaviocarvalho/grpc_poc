@@ -42,11 +42,12 @@ func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*
 	// Increase counter
 	counterMutex.Lock()
 	atomic.AddInt64(&counter, 1)
+	curCount := counter
 	counterMutex.Unlock()
 
 	expMAvgMutex.RLock()
-	measurement := &pb.Measurement{Id: counter, Value: expMovingAvg.Value()}
-	fmt.Println("counter: ", counter, ", value: ", expMovingAvg.Value())
+	measurement := &pb.Measurement{Id: curCount, Value: expMovingAvg.Value()}
+	fmt.Println("counter:", curCount, "value:", expMovingAvg.Value())
 	expMAvgMutex.RUnlock()
 
 	return measurement, nil
