@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"math"
 	"net"
@@ -45,6 +46,7 @@ func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*
 
 	expMAvgMutex.RLock()
 	measurement := &pb.Measurement{Id: counter, Value: expMovingAvg.Value()}
+	fmt.Println("counter: ", counter, ", value: ", expMovingAvg.Value())
 	expMAvgMutex.RUnlock()
 
 	return measurement, nil

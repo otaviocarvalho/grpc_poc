@@ -2,11 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"math"
-	"math/rand"
 	"net"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -28,9 +27,12 @@ var expMovingAvg = ewma.NewMovingAverage()
 var expMAvgMutex sync.RWMutex
 var counterMutex sync.Mutex
 
-var clientPort = flag.String("cp", ":50051", "client ip/port")
-var serverPort = flag.String("sp", ":50052", "server ip/port")
+var clientPort = flag.String("c", ":50051", "client ip/port")
+var serverHost = flag.String("s", "localhost:50052", "ip/port")
 var latency = flag.Duration("l", 10*time.Millisecond, "artificial latency")
+var batchSize = flag.Int64("b", 1, "batch size")
+
+var messageChannel = make(chan int64)
 
 func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*pb.Measurement, error) {
 	// Calculate EWMA
@@ -41,6 +43,7 @@ func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*
 	// Increase counter
 	counterMutex.Lock()
 	atomic.AddInt64(&counter, 1)
+	messageChannel <- counter
 	counterMutex.Unlock()
 
 	expMAvgMutex.RLock()
@@ -48,15 +51,6 @@ func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*
 	expMAvgMutex.RUnlock()
 
 	return measurement, nil
-}
-
-func sendMeasurementToGlobalServer(client pb.DataClient, data *pb.Measurement) {
-
-	_, err := client.SendMeasurement(context.Background(), data)
-	if err != nil {
-		log.Fatalf("Could not send message: %s", err)
-	}
-
 }
 
 func main() {
@@ -83,7 +77,7 @@ func main() {
 	// Sends aggregated data to server
 	go func() {
 		// Set up a connection to the gRPC server.
-		conn, err := grpc.Dial(strings.Join([]string{"localhost", *serverPort}, ""), grpc.WithInsecure())
+		conn, err := grpc.Dial(*serverHost, grpc.WithInsecure())
 		if err != nil {
 			log.Fatalf("did not connect: %v", err)
 		}
@@ -91,15 +85,24 @@ func main() {
 		// Creates a new data client
 		client := pb.NewDataClient(conn)
 
-		data := &pb.Measurement{
-			Value: rand.ExpFloat64(),
-		}
+		// Transmits aggregated messages from client to global server
+		for {
+			counter := <-messageChannel
 
-		_, err = client.SendMeasurement(context.Background(), data)
-		if err != nil {
-			log.Fatalf("Could not send message: %s", err)
-		}
+			if counter%*batchSize == 0 {
 
+				data := &pb.Measurement{
+					Value: expMovingAvg.Value(),
+				}
+
+				_, err = client.SendMeasurement(context.Background(), data)
+				if err != nil {
+					log.Fatalf("Could not send message: %s", err)
+				}
+
+				fmt.Println(counter)
+			}
+		}
 	}()
 
 	<-exitChannel
