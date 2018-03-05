@@ -31,6 +31,7 @@ var expMovingAvg = ewma.NewMovingAverage()
 var expMAvgMutex sync.RWMutex
 
 func sendMeasurement(client pb.DataClient, data *pb.Measurement) {
+	fmt.Println(data.Value)
 
 	_, err := client.SendMeasurement(context.Background(), data)
 	if err != nil {
@@ -116,9 +117,7 @@ func main() {
 	// Creates a new data client
 	client := pb.NewDataClient(conn)
 
-	data := &pb.Measurement{
-		Value: rand.ExpFloat64(),
-	}
+	data := &pb.Measurement{}
 
 	var wg sync.WaitGroup
 	wg.Add(*total)
@@ -131,6 +130,9 @@ func main() {
 
 			for j := 0; j < m; j++ {
 				startTimeLoop := time.Now()
+
+				// Generate measurement value
+				data.Value = rand.ExpFloat64()
 
 				// Controls processing local and remote
 				if (j+1)%*batchSize != 0 {
