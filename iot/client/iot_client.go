@@ -117,8 +117,6 @@ func main() {
 	// Creates a new data client
 	client := pb.NewDataClient(conn)
 
-	data := &pb.Measurement{}
-
 	var wg sync.WaitGroup
 	wg.Add(*total)
 
@@ -132,7 +130,9 @@ func main() {
 				startTimeLoop := time.Now()
 
 				// Generate measurement value
-				data.Value = rand.ExpFloat64()
+				data := &pb.Measurement{
+					Value: rand.ExpFloat64(),
+				}
 
 				// Controls processing local and remote
 				if (j+1)%*batchSize != 0 {
