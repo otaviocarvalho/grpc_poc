@@ -10,10 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/VividCortex/ewma"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	//"github.com/golang/protobuf/proto"
-	"github.com/VividCortex/ewma"
 
 	pb "grpc_poc/iot"
 
@@ -24,14 +23,13 @@ var concurrency = flag.Int("c", 1, "concurrency")
 var batchSize = flag.Int("b", 1, "batch size")
 var total = flag.Int("n", 1, "total requests for all clients")
 var host = flag.String("s", "localhost:50051", "ip/port")
-var outputFile = flag.String("o", "./output_stats.json", "output json file")
+var outputFile = flag.String("o", "./output_stats_client.json", "output json file")
 
 var expMovingAvg = ewma.NewMovingAverage()
 
 var expMAvgMutex sync.RWMutex
 
 func sendMeasurement(client pb.DataClient, data *pb.Measurement) {
-	fmt.Println(data.Value)
 
 	_, err := client.SendMeasurement(context.Background(), data)
 	if err != nil {
@@ -97,7 +95,6 @@ func saveStats(numRuns int, totalTime time.Duration, hist *hdr.Histogram) {
 		fmt.Println("Writing output file", err.Error())
 	}
 
-	//fmt.Printf("%+v", stats)
 }
 
 func main() {
