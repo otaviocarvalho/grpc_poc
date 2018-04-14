@@ -31,7 +31,7 @@ var counterMutex sync.Mutex
 
 var port = flag.String("p", ":50052", "ip/port")
 
-var latency = flag.Duration("l", 10*time.Millisecond, "artificial latency")
+var latency = flag.Duration("l", 0*time.Millisecond, "artificial latency")
 
 func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*pb.Measurement, error) {
 	// Calculate EWMA

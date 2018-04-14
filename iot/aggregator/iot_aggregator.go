@@ -33,8 +33,9 @@ var counterMutex sync.Mutex
 
 var clientPort = flag.String("c", ":50051", "client ip/port")
 var serverHost = flag.String("s", "localhost:50052", "ip/port")
-var latency = flag.Duration("l", 10*time.Millisecond, "artificial latency")
+var latency = flag.Duration("l", 0*time.Millisecond, "artificial latency")
 var batchSize = flag.Int64("b", 1, "batch size")
+var batchLogSize = flag.Int64("blog", 1000, "batch size for logging")
 var outputFile = flag.String("o", "./output_stats_aggregator.json", "output json file")
 
 var messageChannel = make(chan int64)
@@ -160,9 +161,10 @@ func main() {
 				histMutex.Unlock()
 
 				// Write histogram for a batch of requests
-				plotStats(int64(*batchSize), hist)
-				saveStats(int64(*batchSize), hist)
-
+				if counter%*batchLogSize == 0 {
+					plotStats(int64(*batchSize), hist)
+					saveStats(int64(*batchSize), hist)
+				}
 			}
 		}
 	}()
