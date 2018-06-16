@@ -37,6 +37,7 @@ var latency = flag.Duration("l", 0*time.Millisecond, "artificial latency")
 var batchSize = flag.Int64("b", 1, "batch size")
 var batchLogSize = flag.Int64("blog", 1000, "batch size for logging")
 var outputFile = flag.String("o", "./output_stats_aggregator.json", "output json file")
+var enableLogs = flag.Bool("log", false, "enable/disable logs")
 
 var messageChannel = make(chan int64)
 
@@ -161,7 +162,7 @@ func main() {
 				histMutex.Unlock()
 
 				// Write histogram for a batch of requests
-				if counter%*batchLogSize == 0 {
+				if (*enableLogs) && (counter%*batchLogSize == 0) {
 					plotStats(int64(*batchSize), hist)
 					saveStats(int64(*batchSize), hist)
 				}
