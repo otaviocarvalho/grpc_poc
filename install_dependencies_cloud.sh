@@ -1,3 +1,5 @@
+sudo apt-get update
+
 # Move to base dir 
 cd /home/ocarval/
 
