@@ -39,7 +39,7 @@ var batchLogSize = flag.Int64("blog", 1000, "batch size for logging")
 var outputFile = flag.String("o", "./output_stats_aggregator.json", "output json file")
 var enableLogs = flag.Bool("log", false, "enable/disable logs")
 
-var messageChannel = make(chan int64)
+var messageChannel = make(chan int64, 100)
 
 type Stats struct {
 	Perc50    int64 `json:"p50"`
@@ -101,7 +101,6 @@ func saveStats(numRuns int64, hist *hdr.Histogram) {
 		fmt.Println("Writing output file", err.Error())
 	}
 
-	//fmt.Printf("%+v", stats)
 }
 
 func main() {
@@ -139,12 +138,20 @@ func main() {
 		// Transmits aggregated messages from client to global server
 		hist := hdr.New(1000000, 30000000000, 5)
 		var histMutex sync.RWMutex
+		var counterAux = int64(0)
 		for {
-			counter := <-messageChannel
+			var isValidMeasurement = true
+
+			select {
+			case c := <-messageChannel:
+				counterAux = c
+			default:
+				isValidMeasurement = false
+			}
 
 			startTimeLoop := time.Now()
 
-			if counter%*batchSize == 0 {
+			if counterAux%*batchSize == 0 && isValidMeasurement {
 
 				data := &pb.Measurement{
 					Value: expMovingAvg.Value(),
@@ -162,7 +169,7 @@ func main() {
 				histMutex.Unlock()
 
 				// Write histogram for a batch of requests
-				if (*enableLogs) && (counter%*batchLogSize == 0) {
+				if (*enableLogs) && (counterAux%*batchLogSize == 0) {
 					plotStats(int64(*batchSize), hist)
 					saveStats(int64(*batchSize), hist)
 				}
