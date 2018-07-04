@@ -39,7 +39,7 @@ var batchLogSize = flag.Int64("blog", 1000, "batch size for logging")
 var outputFile = flag.String("o", "./output_stats_aggregator.json", "output json file")
 var enableLogs = flag.Bool("log", false, "enable/disable logs")
 
-var messageChannel = make(chan int64, 100)
+var messageChannel = make(chan int64, 100000000)
 
 type Stats struct {
 	Perc50    int64 `json:"p50"`
