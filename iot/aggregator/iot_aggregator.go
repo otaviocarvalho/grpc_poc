@@ -25,7 +25,7 @@ import (
 
 type dataServer struct{}
 
-var counter int64 = 0
+var counter int64
 
 var expMovingAvg = ewma.NewMovingAverage()
 var expMAvgMutex sync.RWMutex
@@ -41,7 +41,10 @@ var enableLogs = flag.Bool("log", false, "enable/disable logs")
 
 var messageChannel = make(chan int64, 100000000)
 
+var startTime time.Time
+
 type Stats struct {
+	QPS       float64 `json:"qps"` // Should multiply this number by the batch size on the client side
 	Perc50    int64 `json:"p50"`
 	Perc90    int64 `json:"p90"`
 	Perc99    int64 `json:"p99"`
@@ -70,7 +73,8 @@ func (s *dataServer) SendMeasurement(ctx context.Context, in *pb.Measurement) (*
 	return measurement, nil
 }
 
-func plotStats(numRuns int64, hist *hdr.Histogram) {
+func plotStats(numRuns int64, totalTime time.Duration, hist *hdr.Histogram) {
+	log.Printf("QPS: %v", float64(numRuns)/totalTime.Seconds())
 	log.Printf("50th: %d\n", hist.ValueAtQuantile(50))
 	log.Printf("90th: %d\n", hist.ValueAtQuantile(90))
 	log.Printf("99th: %d\n", hist.ValueAtQuantile(99))
@@ -85,8 +89,9 @@ func plotStats(numRuns int64, hist *hdr.Histogram) {
 	log.Printf("99.999999999th: %d\n", hist.ValueAtQuantile(99.999999999))
 }
 
-func saveStats(numRuns int64, hist *hdr.Histogram) {
+func saveStats(numRuns int64, totalTime time.Duration, hist *hdr.Histogram) {
 	stats := Stats{
+		float64(numRuns) / totalTime.Seconds(),
 		hist.ValueAtQuantile(50),
 		hist.ValueAtQuantile(90),
 		hist.ValueAtQuantile(99),
@@ -95,8 +100,8 @@ func saveStats(numRuns int64, hist *hdr.Histogram) {
 		hist.ValueAtQuantile(99999),
 	}
 
-	statsJson, _ := json.Marshal(stats)
-	err := ioutil.WriteFile(*outputFile, statsJson, 0664)
+	statsJSON, _ := json.Marshal(stats)
+	err := ioutil.WriteFile(*outputFile, statsJSON, 0664)
 	if err != nil {
 		fmt.Println("Writing output file", err.Error())
 	}
@@ -107,6 +112,8 @@ func main() {
 	flag.Parse()
 
 	exitChannel := make(chan struct{})
+
+	startTime = time.Now()
 
 	// Receive connections from client
 	go func() {
@@ -143,15 +150,15 @@ func main() {
 			var isValidMeasurement = true
 
 			select {
-			case c := <-messageChannel:
-				counterAux = c
-			default:
-				isValidMeasurement = false
+				case c := <-messageChannel:
+					counterAux = c
+				default:
+					isValidMeasurement = false
 			}
 
-			startTimeLoop := time.Now()
-
 			if counterAux%*batchSize == 0 && isValidMeasurement {
+
+				startTimeLoop := time.Now()
 
 				data := &pb.Measurement{
 					Value: expMovingAvg.Value(),
@@ -170,8 +177,8 @@ func main() {
 
 				// Write histogram for a batch of requests
 				if (*enableLogs) && (counterAux%*batchLogSize == 0) {
-					plotStats(int64(*batchSize), hist)
-					saveStats(int64(*batchSize), hist)
+					plotStats(int64(counterAux), time.Now().Sub(startTime), hist)
+					saveStats(int64(counterAux), time.Now().Sub(startTime), hist)
 				}
 			}
 		}
